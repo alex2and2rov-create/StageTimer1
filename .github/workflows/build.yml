@@ -1,0 +1,38 @@
+name: Build Stage Timer plugin
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -A x64 -DSTAGETIMER_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Unit tests
+        run: build/Release/timer_tests.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StageTimer-Windows
+          path: build/dist/
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -G Xcode -DSTAGETIMER_BUILD_TESTS=ON
+      - name: Build (universal arm64 + x86_64)
+        run: cmake --build build --config Release
+      - name: Unit tests
+        run: build/Release/timer_tests
+      - name: Zip bundle
+        run: cd build/dist && ditto -c -k --keepParent StageTimer.bundle StageTimer-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StageTimer-macOS
+          path: build/dist/StageTimer-macOS.zip
